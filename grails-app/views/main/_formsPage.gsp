@@ -47,7 +47,11 @@
                                 <td>N/A</td>
                                 <td>
                                     <label class="hiddenId" style="display: none">${it.id}</label>
-                                    <i class="fa fa-paper-plane publishBtn fa-2x" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i><i style="padding-left: 15px" class='fa fa-pencil editBtn fa-2x' aria-hidden='true'></i><i style="padding-left: 15px" class='fa fa-trash-o deleteBtn fa-2x' aria-hidden='true'></i>
+                                    <i style="padding-left: 15px" class="fa fa-paper-plane publishBtn fa-2x" aria-hidden="true" data-toggle="modal" data-target="#myModal"></i>
+                                    <i class="fa fa-download downloadBtn fa-2x" aria-hidden="true"></i>
+                                    <i class='fa fa-pencil editBtn fa-2x' aria-hidden='true'></i>
+                                    <i class="fa fa-files-o copyFormButton fa-2x" aria-hidden="true"></i>
+                                    <i class='fa fa-trash-o deleteBtn fa-2x' aria-hidden='true'></i>
                                 </td>
                             </g:if>
                             <g:else>
@@ -58,6 +62,8 @@
                                 <td>
                                     <label class="hiddenId" style="display: none">${it.id}</label>
                                     <i class="fa fa-download downloadBtn fa-2x" aria-hidden="true"></i>
+                                    <i class="fa fa-files-o copyFormButton fa-2x" aria-hidden="true"></i>
+                                    <i class="fa fa-ban unpublishButton fa-2x" aria-hidden="true"></i>
                                 </td>
                             </g:else>
                         </tr>
@@ -68,7 +74,6 @@
             </div>
             <br>
             <button type="button" class="newFormButton  btn btn-default">New Form <span class="glyphicon glyphicon-plus "></span></button>
-
 
         </g:else>
     </div>

@@ -48,7 +48,7 @@
     </div>
 </nav>
 
-<div class="navbar-fixed-top second-level-nav">
+<div class="navbar-fixed-top second-level-nav" style="color:#666">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed glyphicon glyphicon-menu-hamburger" data-toggle="collapse" data-target="#secondNavbar" aria-expanded="false" aria-controls="navbar">
@@ -72,17 +72,14 @@
                 </li>
 
                 <li class="formsLi"><a class="forms" href="#">Forms</a></li>
+                <li class="analysisLi"><a class="analysis" href="#">Analysis</a></li>
                 <li class="pViewLiv"><a class="pView" href="#">Professor View</a></li>
             </ul>
         </div><!--/.nav-collapse -->
     </div>
 </div>
 
-
-
 <div style="margin-bottom: 130px"></div>
-
-
 
 <g:layoutBody/>
 

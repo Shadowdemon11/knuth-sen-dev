@@ -1,7 +1,6 @@
 package cas
 
 import grails.converters.JSON
-import org.codehaus.groovy.grails.web.json.JSONArray
 
 class MainController {
     Md5passService md5passService
@@ -19,6 +18,17 @@ class MainController {
             expandExpiration(request.getHeader('Authorization'))
             def forms = TestingForm.findAll()
             render (template: "formsPage", model: [forms: forms])
+        }
+    };
+
+    def loadAnalysis(){
+        if(checkExpiration(request.getHeader('Authorization'))){
+            render template: "expiredSession"
+        }
+        else{
+            expandExpiration(request.getHeader('Authorization'))
+            def analysis = TestingAnalysis.findAll()
+            render (template: "analysisPage", model: [analysis: analysis])
         }
     };
 
@@ -115,7 +125,18 @@ class MainController {
         }
     }
 
-    def saveNewForm(String title, String question, String description, String creationDate){
+    def loadAnalysisCreation(){
+        if(checkExpiration(request.getHeader('Authorization'))){
+            render template: "expiredSession"
+        }
+        else {
+            expandExpiration(request.getHeader('Authorization'))
+
+            render(template: "analysisCreation", model: [forms: TestingForm.findAll()])
+        }
+    }
+
+    def saveNewForm(String title, String question, String description, Integer automationDate){
         JSON resultJson
         TestingForm testingForm;
         testingForm = TestingForm.findByTitle(title);
@@ -126,7 +147,7 @@ class MainController {
         else {
             expandExpiration(request.getHeader('Authorization'))
             if (!testingForm) {
-                testingForm = new TestingForm(title: title, question: question, description: description, creationDate: creationDate, published: 0);
+                testingForm = new TestingForm(title: title, question: question, description: description, creationDate: new Date().getDateString(), published: 0, automationDate: automationDate);
                 if (testingForm.save(flush: true)) {
                     resultJson = [status: 0, message: "Success"] as JSON
                 } else {
@@ -497,7 +518,7 @@ class MainController {
         render(resultJson)
     }
 
-    def saveEditForm(String title, String question, String description, int id){
+    def saveEditForm(String title, String question, String description, int id, Integer automationDate){
         JSON resultJson
         TestingForm testingForm;
         testingForm = TestingForm.findByTitle(title);
@@ -511,6 +532,7 @@ class MainController {
                 if (testingForm.id == id) {
                     testingForm.question = question;
                     testingForm.description = description;
+                    testingForm.automationDate = automationDate;
 
                     if (testingForm.save(flush: true)) {
                         resultJson = [status: 0, message: "Success"] as JSON
@@ -526,6 +548,7 @@ class MainController {
                 testingForm.title = title;
                 testingForm.question = question;
                 testingForm.description = description;
+                testingForm.automationDate = automationDate;
                 if (testingForm.save(flush: true)) {
                     resultJson = [status: 0, message: "Success"] as JSON
                 } else {
@@ -810,7 +833,6 @@ class MainController {
     }
 
     def loadLogIn(){
-
         TestingFaculty testingUser
 
         testingUser = TestingFaculty.findByUsername("admin@admin.com")
@@ -840,7 +862,7 @@ class MainController {
             testingUser6.save(flush: true)
             testingUser7.save(flush: true)
 
-            TestingSection testingSection = new TestingSection(professor: testingUser3, title: "testSec1");
+            TestingSection testingSection = new TestingSection(professor: testingUser, title: "testSec1");
             TestingSection testingSection2 = new TestingSection(professor: testingUser4, title: "testSec2");
             TestingSection testingSection3 = new TestingSection(professor: testingUser5, title: "testSec1");
 
@@ -850,8 +872,8 @@ class MainController {
 
             TestingCourse testingCourse = new TestingCourse(name: "TestCourse1", courseCoordinator: testingUser2, sections: [testingSection, testingSection2]);
             TestingCourse testingCourse2 = new TestingCourse(name: "TestCourse2", courseCoordinator: testingUser2, sections: [testingSection3]);
-            TestingCourse testingCourse3 = new TestingCourse(name: "TestCourse3");
-            TestingCourse testingCourse4 = new TestingCourse(name: "TestCourse4");
+            TestingCourse testingCourse3 = new TestingCourse(name: "TestCourse3", sections: [testingSection3]);
+            TestingCourse testingCourse4 = new TestingCourse(name: "TestCourse4", sections: [testingSection3]);
 
             testingCourse.save(flush: true)
             testingCourse2.save(flush: true)
@@ -955,7 +977,17 @@ class MainController {
         }
     }
 
-    def publishForm(String courseName, int id, String publishDate) {
+    def loadStoredGrades(Integer id) {
+        if(checkExpiration(request.getHeader('Authorization'))){
+            render template: "expiredSession"
+        }
+        else {
+            expandExpiration(request.getHeader('Authorization'))
+            render(template: 'analysisCreationStoredGrades', model: [storedGradeItem: TestingGradeStore.findAllByForForm(TestingForm.findById(id))]);
+        }
+    }
+
+    def publishForm(String courseName, int id) {
 
         JSON resultJson;
 
@@ -970,7 +1002,7 @@ class MainController {
             if (testingForm) {
                 testingForm.published = 1;
                 testingForm.course = TestingCourse.findByName(courseName);
-                testingForm.publishDate = publishDate;
+                testingForm.publishDate = new Date().getDateString();
 
                 if (testingForm.save(flush: true)) {
                     resultJson = [status: 0, message: "Success"] as JSON
@@ -981,7 +1013,172 @@ class MainController {
                 resultJson = [status: 1, message: "Error"] as JSON
             }
         }
-
+        //todo notify professors that they have forms waiting
         render(resultJson);
     }
+
+    def unpublishForm(Integer id){
+        JSON resultJson = [status: 1, message: "Error"] as JSON
+        TestingForm testingForm;
+        testingForm = TestingForm.findById(id);
+
+        if(checkExpiration(request.getHeader('Authorization'))){
+            resultJson = [status: 5, message: "Expired"] as JSON
+        }
+        else {
+            expandExpiration(request.getHeader('Authorization'))
+            if (testingForm) {
+                testingForm.published = 0;
+                if (testingForm.save(flush: true)) {
+                    resultJson = [status: 0, message: "Success"] as JSON
+                } else {
+                    resultJson = [status: 1, message: "Error"] as JSON
+                }
+            }
+        }
+        render(resultJson)
+    }
+
+    def copyFormEdit(int id){
+        if(checkExpiration(request.getHeader('Authorization'))){
+            render template: "expiredSession"
+        }
+        else {
+            expandExpiration(request.getHeader('Authorization'))
+            render(template: 'formCopy', model: [form: TestingForm.findById(id)]);
+        }
+    }
+
+    def loadUserForms(){
+        if(checkExpiration(request.getHeader('Authorization'))){
+            render template: "expiredSession"
+        }
+        else{
+            expandExpiration(request.getHeader('Authorization'))
+
+            TestingFaculty currentUser = TestingFaculty.findByToken(request.getHeader('Authorization'));
+
+            def allForms = TestingForm.findAllByPublished(1)
+            def forms = []
+            def sections = []
+
+            for(TestingForm tf in allForms){
+                for(TestingSection ts in tf.course.sections){
+                    if(ts.professor == currentUser){
+                        forms.add(tf)
+                        sections.add(ts)
+                    }
+                }
+            }
+
+            def users = []
+            def assessmentCoordinators = TestingFaculty.findAllByRole(TestingRole.findById(1))
+
+            assessmentCoordinators.each{
+                users.add(it)
+            }
+
+            render (template: "listAvailableForms", model: [forms: forms, sections: sections, assessmentCoordinators:assessmentCoordinators])
+        }
+    };
+
+    def loadDataInput(int id, int sectionId){
+        if(checkExpiration(request.getHeader('Authorization'))){
+            render template: "expiredSession"
+        }
+        else {
+
+            expandExpiration(request.getHeader('Authorization'))
+            render(template: 'dataInput', model: [id: id, sectionId: sectionId, cName:TestingForm.findById(id).course.name, sTitle:TestingSection.findById(sectionId).title]);
+        }
+    }
+
+    def saveGradeData(Integer id, String grades, Integer sectionId, Integer gradeRange){
+        JSON resultJson
+        TestingForm testingForm;
+        testingForm = TestingForm.findById(id);
+        TestingFaculty testingFaculty = TestingFaculty.findByToken(request.getHeader('Authorization'));
+        TestingGradeStore testingGradeStore = TestingGradeStore.findByForFormAndStoredBy(testingForm, testingFaculty);
+        Date now = new Date();
+
+        if(checkExpiration(request.getHeader('Authorization'))){
+            resultJson = [status: 5, message: "Expired"] as JSON
+        }
+        else {
+            expandExpiration(request.getHeader('Authorization'))
+            if (testingGradeStore) {
+                if (testingForm.id == id) {
+                    testingGradeStore.grades = grades;
+                    testingGradeStore.gradeRange = gradeRange;
+                    testingGradeStore.storeDate = now.getDateString();
+
+                    if (testingGradeStore.save(flush: true)) {
+                        resultJson = [status: 0, message: "Success"] as JSON
+                    } else {
+                        resultJson = [status: 1, message: "Error"] as JSON
+                    }
+                } else {
+                    resultJson = [status: 2, message: "Error"] as JSON
+                }
+            } else {
+
+                testingGradeStore = new TestingGradeStore(grades: grades, forForm: testingForm, forSection: TestingSection.findById(sectionId), storedBy: testingFaculty, storeDate: now.getDateString(), gradeRange: gradeRange)
+
+                if (testingGradeStore.save(flush: true)) {
+                    resultJson = [status: 0, message: "Success"] as JSON
+                } else {
+                    resultJson = [status: 1, message: "Error"] as JSON
+                }
+            }
+        }
+        render(resultJson)
+    }
+
+    protected static findFormsToRepublish(){
+
+        def allPublishedForms = TestingForm.findAllByPublished(1)
+        def toRepublish = []
+
+        allPublishedForms.each {
+
+            Date d = new Date(it.publishDate)
+            Date currentD = new Date()
+
+            if((currentD.getYear()>d.getYear())&&(currentD.getMonth()+1>=it.automationDate)){
+                toRepublish.push(it)
+            }
+        }
+
+        republishForms(toRepublish)
+    }
+
+    protected static republishForms(toRepublish){
+        def arrProf = [];
+        def arrCouSec = [];
+        toRepublish.each {
+            TestingForm form = it;
+            it.publishDate = new Date().getDateString();
+            it.save(flush: true);
+
+            for(TestingSection ts in form.course.sections) {
+                arrCouSec.add(form.course.name + " - " + ts.title);
+                arrProf.add(ts.professor);
+            }
+        }
+        //todo notify professors that they have forms waiting
+
+        //publishEmail(arrProf, arrCouSec);
+    }
+
+    protected static publishEmail(professors, courseSections){
+            professors.eachWithIndex { professor, index ->
+            sendMail {
+                to professor.email
+                subject "Published Template For " + courseSections[index]
+                html g.render(template:'/main/formPublishMail', model:[lname: professor.lName])
+            }
+        }
+    }
+
 }
+

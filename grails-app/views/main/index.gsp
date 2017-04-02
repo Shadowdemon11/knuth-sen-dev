@@ -16,6 +16,7 @@
 <div id="mainContainer" class="container block-element-container"></div>
 
 <script>
+    var singleGradeItem = commentToHtml(function () {<g:render template="singleGradeItem"/>});
     var $body = $('body');
     $('.secondNav').css("visibility", "hidden");
 
@@ -37,8 +38,14 @@
         loadForms();
     });
 
+    $body.on('click', '.analysis', function (event) {
+        event.preventDefault();
+        loadAnalysis();
+    });
+
     $body.on('click', '.pView', function (event) {
         event.preventDefault();
+        loadProfView();
     });
 
     $body.on('click', '.admin', function (event) {
@@ -51,6 +58,10 @@
 
     $body.on('click', '.loginBtn', function () {
         loadLogInPage();
+    });
+
+    $body.on('click', '.cancelGradeInput', function () {
+        loadProfView();
     });
 
     $body.on('click', '.cancelAttemptLogin', function () {
@@ -74,8 +85,16 @@
         loadFormPublishing(this);
     });
 
+    $body.on('click', '.unpublishButton', function () {
+        unpublishForm(this);
+    });
+
     $body.on('click', '.newFormButton', function () {
         loadFormCreation();
+    });
+
+    $body.on('click', '.newAnalysisButton', function () {
+        loadAnalysisCreation();
     });
 
     $body.on('click', '.attemptLogin', function () {
@@ -177,6 +196,10 @@
         loadAdminCourses();
     });
 
+    $body.on('click', '.cancelNewAnalysis', function () {
+        loadAnalysis();
+    });
+
     $body.on('click', '.cancelNewFaculty', function () {
         loadAdminFaculty();
     });
@@ -199,6 +222,10 @@
 
     $body.on('click', '.saveNewCourse', function () {
         saveNewCourse(this);
+    });
+
+    $body.on('click', '.saveNewAnalysis', function () {
+        saveNewAnalysis();
     });
 
     $body.on('click', '.disableFacultyBtn', function () {
@@ -237,15 +264,73 @@
         loadDepartmentCourses();
     });
 
+    $body.on('click', '.loadStoredGrades', function () {
+        loadStoredGrades();
+    });
+
     $body.on('click', '.publishForm', function () {
         publishForm();
     });
 
+    $body.on('click', '.copyFormButton', function () {
+        copyForm(this);
+    });
+
+    $body.on('click', '.inputData', function () {
+        loadDataInput(this, singleGradeItem);
+    });
+
+    $body.on('click', '.addGradeItem ', function () {
+        addSingleGradeItem(singleGradeItem);
+    });
+
+    $body.on('click', '.removeGradeItem ', function () {
+        removeGradeItem(this);
+    });
+
+    $body.on('click', '.parseGrades ', function () {
+        parseGrades(singleGradeItem);
+    });
+
+    $body.on('click', '.saveGrades ', function () {
+        saveGrades();
+    });
+
+    $body.on('click', '.downloadBtn ', function () {
+        downloadAllData(this);
+    });
 
     $(document).on({
-        ajaxStart: function() { $body.addClass("loading");    },
+//        ajaxStart: function() { $body.addClass("loading");    },
         ajaxStop: function() { $body.removeClass("loading"); }
     });
+
+
+    function downloadAllData(that){
+
+        var id = $(that).parent().find('.hiddenId').html();
+
+        $.ajax({
+            url: "/knuth-sen-dev/main/getRole",
+            type: "GET",
+            headers: {
+                'Authorization':Cookies.get('token')
+            },
+            success: function (data) {
+                if(data.status===0){
+                    Cookies.remove('token');
+                }
+                else if (data.status===1) {
+                    var link = "${g.createLink(controller: 'dataDownload', action: 'downloadAllData')}"+"?id=" + id;
+                    window.location.replace(link);
+                }
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                console.log('textStatus: ' + textStatus + '  errorThrown: ' + errorThrown);
+                return false;
+            }
+        });
+    }
 
 </script>
 </body>
